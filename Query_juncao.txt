@@ -1,0 +1,40 @@
+SELECT  
+	pro.id_produto,
+	pro.descricao,
+	c.id_cliente,
+	c.razao_social as cliente_razao_social,
+	e.id_empresa,
+	e.razao_social as empresa_razao_social,
+	v.id_vendedor,
+	v.nome,
+	cpp.preco_minimo,
+	cpp.preco_maximo,
+  max(p.data_emissao) as data_pedido,
+  it.preco_praticado AS preco_base
+FROM
+	clientes c
+INNER JOIN 
+	pedido p ON c.id_cliente = p.id_cliente
+INNER JOIN 
+	empresa e ON e.id_empresa = p.id_empresa
+INNER JOIN 
+	vendedores v ON v.id_vendedor = c.id_vendedor
+INNER JOIN 
+	itens_pedido it ON it.id_pedido = p.id_pedido
+INNER JOIN 	
+	produtos pro ON pro.id_produto = it.id_produto
+INNER JOIN (
+	SELECT id_pedido, MAX(data_emissao) AS max_data_emissao
+	FROM pedido
+	GROUP BY id_pedido
+) AS pedido_max_data ON pedido_max_data.id_pedido = p.id_pedido
+INNER JOIN 
+	config_preco_produto cpp ON cpp.id_produto = pro.id_produto
+WHERE 
+	it.preco_praticado BETWEEN cpp.preco_minimo AND cpp.preco_maximo
+	AND pedido_max_data.max_data_emissao = p.data_emissao
+group by 
+	pro.descricao
+order by 
+	p.data_emissao desc;
+
